@@ -9,10 +9,13 @@ namespace IniParserLTK
 {
     public class IniParser
     {
+        /// <summary>
+        /// Protected variables
+        /// </summary>
         protected const string INHERIT = "Inherit";
         protected const string ROOT = "Root";
-        private Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
-        private String iniFilePath;
+        protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
+        protected String iniFilePath;
         /// <summary>
         /// Opens the INI file at the given path and enumerates the values in the IniParser.
         /// </summary>
