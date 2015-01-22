@@ -16,37 +16,38 @@ namespace IniParserLTK
         protected const string ROOT = "Root";
         protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
         protected String iniFilePath;
-        /// <summary>
-        /// Opens the INI file at the given path and enumerates the values in the IniParser.
-        /// </summary>
-        /// <param name="iniPath">Full path to INI file.</param>
-        public IniParser(String iniPath)
+
+        public IniParser()
         {
-            String strLine = null;
-            String currentRoot = null;
-            String[] keyPair = null;
 
-            iniFilePath = iniPath;
+        }
+        public IniParser(String iniFilePath)
+        {
+            this.iniFilePath = iniFilePath;
+            Initialize(File.ReadAllText(iniFilePath));
+        }
 
-            using (var iniFile = new StreamReader(iniPath))
+
+        public void Initialize(string iniStr)
+        {
+            var lines = iniStr.Split('\n').Where(x => x.Length > 0 && !x.StartsWith(";")).Select(x => x.Trim());
+            string currentRoot = ROOT;
+            string[] keyPair;
+            foreach (var line in lines)
             {
-                while ((strLine = iniFile.ReadLine()) != null)
                 {
-                    strLine = strLine.Trim();
-                    if (strLine != "" && !strLine.StartsWith(";"))
+                    if (line != "" && !line.StartsWith(";"))
                     {
-                        if (strLine.StartsWith("[") && strLine.EndsWith("]"))
+                        if (line.StartsWith("[") && line.EndsWith("]"))
                         {
-                            currentRoot = strLine.Substring(1, strLine.Length - 2);
+                            currentRoot = line.Substring(1, line.Length - 2);
                             AddSection(currentRoot);
                         }
                         else
                         {
-                            keyPair = strLine.Split(new char[] { '=' }, 2);
+                            keyPair = line.Split(new char[] { '=' }, 2);
                             if (keyPair.Length != 2)
                                 continue;
-                            if (currentRoot == null)
-                                currentRoot = ROOT;
                             AddSetting(currentRoot, keyPair[0], keyPair[1]);
                         }
                     }
@@ -54,11 +55,7 @@ namespace IniParserLTK
             }
         }
 
-        /// <summary>
-        /// Returns the value for the given section, key pair.
-        /// </summary>
-        /// <param name="sectionName">Section name.</param>
-        /// <param name="settingName">Key name.</param>
+
         public String GetSetting(String sectionName, String settingName, bool ignoreParent = false)
         {
             String ret = null;
@@ -76,52 +73,28 @@ namespace IniParserLTK
             return ret;
         }
 
-        /// <summary>
-        /// Enumerates all lines for given section.
-        /// </summary>
-        /// <param name="sectionName">Section to enum.</param>
         public List<String> EnumSection(String sectionName)
         {
             return keyPairs.Keys.ToList();
         }
 
-        /// <summary>
-        /// Adds or replaces a setting to the table to be saved.
-        /// </summary>
-        /// <param name="sectionName">Section to add under.</param>
-        /// <param name="settingName">Key name to add.</param>
-        /// <param name="settingValue">Value of key.</param>
         public void AddSetting(String sectionName, String settingName, String settingValue)
         {
             AddSection(sectionName);
             keyPairs[sectionName][settingName] = settingValue;
         }
 
-        /// <summary>
-        /// Adds or replaces a setting to the table to be saved with a null value.
-        /// </summary>
-        /// <param name="sectionName">Section to add under.</param>
-        /// <param name="settingName">Key name to add.</param>
         public void AddSetting(String sectionName, String settingName)
         {
             AddSetting(sectionName, settingName, null);
         }
 
-        /// <summary>
-        /// Remove a setting.
-        /// </summary>
-        /// <param name="sectionName">Section to add under.</param>
-        /// <param name="settingName">Key name to add.</param>
         public void DeleteSetting(String sectionName, String settingName)
         {
             if (keyPairs.ContainsKey(sectionName) && keyPairs[sectionName].ContainsKey(settingName))
                 keyPairs[sectionName].Remove(settingName);
         }
 
-        /// <summary>
-        /// Save settings to new file.
-        /// </summary>
-        /// <param name="newFilePath">New file path.</param>
         public void SaveSettings(String newFilePath)
         {
             StringBuilder sb = new StringBuilder();
@@ -145,20 +118,13 @@ namespace IniParserLTK
             }
         }
 
-        /// <summary>
-        /// Save settings back to ini file.
-        /// </summary>
         public void SaveSettings()
         {
+            if (iniFilePath == null)
+                throw new Exception("Please specify the path as default save path has not been set");
             SaveSettings(iniFilePath);
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sectionName"></param>
-        /// <param name="settingName"></param>
-        /// <param name="ignoreParent"></param>
-        /// <returns></returns>
+
         public bool HasSetting(String sectionName, String settingName, bool ignoreParent = false)
         {
             bool flag = false;
@@ -175,36 +141,21 @@ namespace IniParserLTK
             }
             return flag;
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sectionName"></param>
-        /// <returns></returns>
+
         public bool HasSection(String sectionName)
         {
             return keyPairs.ContainsKey(sectionName);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sectionName"></param>
-        /// <returns></returns>
         public Dictionary<string, string> GetAllSettings(string sectionName)
         {
             return keyPairs[sectionName];
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sectionName"></param>
         public void AddSection(String sectionName)
         {
             if (!keyPairs.ContainsKey(sectionName))
                 keyPairs.Add(sectionName, new Dictionary<string, string>());
         }
     }
-
-
 }

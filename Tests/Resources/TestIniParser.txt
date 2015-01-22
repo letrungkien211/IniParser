@@ -1,0 +1,7 @@
+[Abc]
+a=b
+c=d
+
+[Def]
+Inherit=Abc
+a=d
