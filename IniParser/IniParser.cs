@@ -13,6 +13,7 @@ namespace IniParserLTK
         protected const string INHERIT = "Inherit"; // Support section inheritance
         protected const string ROOT = "Root";       // Root section
         protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
+        protected string iniFilePath;
         #endregion
 
         #region  Constructors, Initializers, Savers
@@ -51,10 +52,13 @@ namespace IniParserLTK
         }
         public void Read(string iniFilePath)
         {
+            this.iniFilePath = iniFilePath;
             Initialize(File.ReadAllText(iniFilePath));
         }
-        public void Save(string iniFilePath)
+        public void Save(string iniFilePath = null)
         {
+            if (iniFilePath == null)
+                iniFilePath = this.iniFilePath;
             File.WriteAllText(iniFilePath, ToString());
         }
         public override string ToString()
