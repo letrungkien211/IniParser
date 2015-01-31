@@ -9,84 +9,55 @@ namespace IniParserLTK
 {
     public class IniParser
     {
+        #region Properties
         protected const string INHERIT = "Inherit"; // Support section inheritance
         protected const string ROOT = "Root";       // Root section
         protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
-        protected String iniFilePath;   // The file path
-        public IniParser(String iniPath)
+        #endregion
+
+        #region  Constructors, Initializers, Savers
+        public IniParser()
         {
-            String strLine = null;
-            String currentRoot = null;
-            String[] keyPair = null;
-
-            iniFilePath = iniPath;
-
-            using (var iniFile = new StreamReader(iniPath))
+        }
+        public IniParser(string iniFilePath)
+        {
+            Read(iniFilePath);
+        }
+        public void Initialize(string iniStr)
+        {
+            var lines = iniStr.Split('\n').Where(x => x.Length > 0 && !x.StartsWith(";")).Select(x => x.Trim());
+            string currentRoot = ROOT;
+            string[] keyPair;
+            foreach (var line in lines)
             {
-                while ((strLine = iniFile.ReadLine()) != null)
                 {
-                    strLine = strLine.Trim();
-                    if (strLine != "" && !strLine.StartsWith(";"))
+                    if (line != "" && !line.StartsWith(";"))
                     {
-                        if (strLine.StartsWith("[") && strLine.EndsWith("]"))
+                        if (line.StartsWith("[") && line.EndsWith("]"))
                         {
-                            currentRoot = strLine.Substring(1, strLine.Length - 2);
+                            currentRoot = line.Substring(1, line.Length - 2);
                             AddSection(currentRoot);
                         }
                         else
                         {
-                            keyPair = strLine.Split(new char[] { '=' }, 2);
+                            keyPair = line.Split(new char[] { '=' }, 2);
                             if (keyPair.Length != 2)
                                 continue;
-                            if (currentRoot == null)
-                                currentRoot = ROOT;
                             AddSetting(currentRoot, keyPair[0], keyPair[1]);
                         }
                     }
                 }
             }
         }
-
-        public String GetSetting(String sectionName, String settingName, bool ignoreParent = false)
+        public void Read(string iniFilePath)
         {
-            String ret = null;
-            if (keyPairs.ContainsKey(sectionName))
-            {
-                if (keyPairs[sectionName].ContainsKey(settingName))
-                {
-                    ret = keyPairs[sectionName][settingName];
-                }
-                else if (!ignoreParent && keyPairs[sectionName].ContainsKey(INHERIT))
-                {
-                    ret = GetSetting(keyPairs[sectionName][INHERIT], settingName);
-                }
-            }
-            return ret;
+            Initialize(File.ReadAllText(iniFilePath));
         }
-
-        public List<String> EnumSection(String sectionName)
+        public void Save(string iniFilePath)
         {
-            return keyPairs.Keys.ToList();
+            File.WriteAllText(iniFilePath, ToString());
         }
-
-        public void AddSetting(String sectionName, String settingName, String settingValue)
-        {
-            AddSection(sectionName);
-            keyPairs[sectionName][settingName] = settingValue;
-        }
-
-        public void AddSetting(String sectionName, String settingName)
-        {
-            AddSetting(sectionName, settingName, null);
-        }
-
-        public void DeleteSetting(String sectionName, String settingName)
-        {
-            if (keyPairs.ContainsKey(sectionName) && keyPairs[sectionName].ContainsKey(settingName))
-                keyPairs[sectionName].Remove(settingName);
-        }
-
-        public void SaveSettings(String newFilePath)
+        public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
             foreach (var section in keyPairs)
@@ -98,15 +69,13 @@ namespace IniParserLTK
                     sb.Append(kv.Key + "=" + kv.Value + "\r\n");
                 }
             }
-            File.WriteAllText(newFilePath, sb.ToString());
+            return sb.ToString();
         }
 
-        public void SaveSettings()
-        {
-            SaveSettings(iniFilePath);
-        }
+        #endregion
 
-        public bool HasSetting(String sectionName, String settingName, bool ignoreParent = false)
+        #region Operators: Has, Get, Set, Delete
+        public bool HasSetting(string sectionName, string settingName, bool ignoreParent = false)
         {
             bool flag = false;
             if (keyPairs.ContainsKey(sectionName))
@@ -122,21 +91,58 @@ namespace IniParserLTK
             }
             return flag;
         }
-
-        public bool HasSection(String sectionName)
+        public bool HasSection(string sectionName)
         {
             return keyPairs.ContainsKey(sectionName);
         }
+        public string GetSetting(string sectionName, string settingName, bool ignoreParent = false)
+        {
+            string ret = null;
+            if (keyPairs.ContainsKey(sectionName))
+            {
+                if (keyPairs[sectionName].ContainsKey(settingName))
+                {
+                    ret = keyPairs[sectionName][settingName];
+                }
+                else if (!ignoreParent && keyPairs[sectionName].ContainsKey(INHERIT))
+                {
+                    ret = GetSetting(keyPairs[sectionName][INHERIT], settingName);
+                }
+            }
+            return ret;
+        }
+        public void AddSetting(string sectionName, string settingName, string settingValue)
+        {
+            AddSection(sectionName);
+            keyPairs[sectionName][settingName] = settingValue;
+        }
+        public void AddSetting(string sectionName, string settingName)
+        {
+            AddSetting(sectionName, settingName, null);
+        }
+        public void AddSection(string sectionName)
+        {
+            if (!keyPairs.ContainsKey(sectionName))
+                keyPairs.Add(sectionName, new Dictionary<string, string>());
+        }
+        public void DeleteSetting(string sectionName, string settingName)
+        {
+            if (keyPairs.ContainsKey(sectionName) && keyPairs[sectionName].ContainsKey(settingName))
+                keyPairs[sectionName].Remove(settingName);
+        }
 
+        #endregion
+
+        #region Others: EnumSection, GetAllSettings
+        public List<String> EnumSection(string sectionName)
+        {
+            return keyPairs.Keys.ToList();
+        }
         public Dictionary<string, string> GetAllSettings(string sectionName)
         {
             return keyPairs[sectionName];
         }
 
-        public void AddSection(String sectionName)
-        {
-            if (!keyPairs.ContainsKey(sectionName))
-                keyPairs.Add(sectionName, new Dictionary<string, string>());
-        }
+        #endregion
     }
 }
