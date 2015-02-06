@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace IniParserLTK
 {
+    /// <summary>
+    /// Simple ini parser: 
+    /// 1. Read, save from string or files. 
+    /// 2. Section inheritance [A]x=y[B]Inherit=A
+    /// 3. Extensible, all methods are virtual
+    /// </summary>
     public class IniParser
     {
         #region Protected Properties
@@ -40,27 +46,22 @@ namespace IniParserLTK
         /// <param name="iniStr">String ini</param>
         public virtual void Initialize(string iniStr)
         {
-            var lines = iniStr.Split('\n').Where(x => x.Length > 0 && !x.StartsWith(";")).Select(x => x.Trim());
-            string currentRoot = ROOT;
+            var lines = iniStr.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#"));
+            var currentRoot = ROOT;
             string[] keyPair;
             foreach (var line in lines)
             {
+                if (line.StartsWith("[") && line.EndsWith("]"))
                 {
-                    if (line != "" && !line.StartsWith("#"))
-                    {
-                        if (line.StartsWith("[") && line.EndsWith("]"))
-                        {
-                            currentRoot = line.Substring(1, line.Length - 2);
-                            AddSection(currentRoot);
-                        }
-                        else
-                        {
-                            keyPair = line.Split(new char[] { '=' }, 2);
-                            if (keyPair.Length != 2)
-                                continue;
-                            AddSetting(currentRoot, keyPair[0], keyPair[1]);
-                        }
-                    }
+                    currentRoot = line.Substring(1, line.Length - 2);
+                    AddSection(currentRoot);
+                }
+                else
+                {
+                    keyPair = line.Split(new char[] { '=' }, 2);
+                    if (keyPair.Length != 2)
+                        continue;
+                    AddSetting(currentRoot, keyPair[0], keyPair[1]);
                 }
             }
         }
@@ -168,7 +169,7 @@ namespace IniParserLTK
         /// <summary>
         /// Get all settings under a section
         /// </summary>
-        /// <param name="sectionName"></param>
+        /// <param name="sectionName">Section's name</param>
         /// <returns>Dictionary of settings for a section</returns>
         public virtual Dictionary<string, string> GetAllSettings(string sectionName)
         {
