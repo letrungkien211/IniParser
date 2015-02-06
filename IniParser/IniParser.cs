@@ -9,7 +9,7 @@ namespace IniParserLTK
 {
     public class IniParser
     {
-        #region Properties
+        #region Protected Properties
         protected const string INHERIT = "Inherit"; // Support section inheritance
         protected const string ROOT = "Root";       // Root section
         protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
@@ -17,14 +17,28 @@ namespace IniParserLTK
         #endregion
 
         #region  Constructors, Initializers, Savers
+       
+        /// <summary>
+        /// Empty constructor
+        /// </summary>
         public IniParser()
         {
         }
+        
+        /// <summary>
+        /// Construct parser from an ini file
+        /// </summary>
+        /// <param name="iniFilePath">Path of an ini file</param>
         public IniParser(string iniFilePath)
         {
             Read(iniFilePath);
         }
-        public void Initialize(string iniStr)
+        
+        /// <summary>
+        /// Initialize from an ini string
+        /// </summary>
+        /// <param name="iniStr">String ini</param>
+        public virtual void Initialize(string iniStr)
         {
             var lines = iniStr.Split('\n').Where(x => x.Length > 0 && !x.StartsWith(";")).Select(x => x.Trim());
             string currentRoot = ROOT;
@@ -32,7 +46,7 @@ namespace IniParserLTK
             foreach (var line in lines)
             {
                 {
-                    if (line != "" && !line.StartsWith(";"))
+                    if (line != "" && !line.StartsWith("#"))
                     {
                         if (line.StartsWith("[") && line.EndsWith("]"))
                         {
@@ -50,17 +64,11 @@ namespace IniParserLTK
                 }
             }
         }
-        public void Read(string iniFilePath)
-        {
-            this.iniFilePath = iniFilePath;
-            Initialize(File.ReadAllText(iniFilePath));
-        }
-        public void Save(string iniFilePath = null)
-        {
-            if (iniFilePath == null)
-                iniFilePath = this.iniFilePath;
-            File.WriteAllText(iniFilePath, ToString());
-        }
+        
+        /// <summary>
+        /// Convert settings to string
+        /// </summary>
+        /// <returns>String contains all settings</returns>
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -76,10 +84,37 @@ namespace IniParserLTK
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Read ini settings from a file
+        /// </summary>
+        /// <param name="iniFilePath">Path of an ini file</param>
+        public virtual void Read(string iniFilePath)
+        {
+            this.iniFilePath = iniFilePath;
+            Initialize(File.ReadAllText(iniFilePath));
+        }
+
+        /// <summary>
+        /// Save to a file
+        /// </summary>
+        /// <param name="iniFilePath">Path of an ini file. If not specified, the file for read will be used.</param>
+        public virtual void Save(string iniFilePath = null)
+        {
+            if (iniFilePath == null)
+                iniFilePath = this.iniFilePath;
+            File.WriteAllText(iniFilePath, ToString());
+        }
         #endregion
 
         #region Operators: Has, Get, Set, Delete
-        public bool HasSetting(string sectionName, string settingName, bool ignoreParent = false)
+        /// <summary>
+        /// Check if a setting exists under section.
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        /// <param name="settingName">Setting's name</param>
+        /// <param name="ignoreParent">True: Ignore Inheritance. False: Get setting from parent section if this section does not contain the setting</param>
+        /// <returns>True/False</returns>
+        public virtual bool HasSetting(string sectionName, string settingName, bool ignoreParent = false)
         {
             bool flag = false;
             if (keyPairs.ContainsKey(sectionName))
@@ -95,11 +130,25 @@ namespace IniParserLTK
             }
             return flag;
         }
-        public bool HasSection(string sectionName)
+        
+        /// <summary>
+        /// Check if a section exists
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        /// <returns>True/False</returns>
+        public virtual bool HasSection(string sectionName)
         {
             return keyPairs.ContainsKey(sectionName);
         }
-        public string GetSetting(string sectionName, string settingName, bool ignoreParent = false)
+        
+        /// <summary>
+        /// Get a setting under a section.
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        /// <param name="settingName">Setting's name</param>
+        /// <param name="ignoreParent">True: Ignore Inheritance. False: Get setting from parent section if this section does not contain the setting</param>
+        /// <returns>String</returns>
+        public virtual string GetSetting(string sectionName, string settingName, bool ignoreParent = false)
         {
             string ret = null;
             if (keyPairs.ContainsKey(sectionName))
@@ -115,21 +164,45 @@ namespace IniParserLTK
             }
             return ret;
         }
-        public void AddSetting(string sectionName, string settingName, string settingValue)
+
+        /// <summary>
+        /// Get all settings under a section
+        /// </summary>
+        /// <param name="sectionName"></param>
+        /// <returns>Dictionary of settings for a section</returns>
+        public virtual Dictionary<string, string> GetAllSettings(string sectionName)
+        {
+            return keyPairs[sectionName];
+        }
+
+        /// <summary>
+        /// Add a setting to a section
+        /// </summary>
+        /// <param name="sectionName">Sectin's name</param>
+        /// <param name="settingName">Setting's name</param>
+        /// <param name="settingValue">Setting's value</param>
+        public virtual void AddSetting(string sectionName, string settingName, string settingValue)
         {
             AddSection(sectionName);
             keyPairs[sectionName][settingName] = settingValue;
         }
-        public void AddSetting(string sectionName, string settingName)
-        {
-            AddSetting(sectionName, settingName, null);
-        }
-        public void AddSection(string sectionName)
+
+        /// <summary>
+        /// Add a section
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        public virtual void AddSection(string sectionName)
         {
             if (!keyPairs.ContainsKey(sectionName))
                 keyPairs.Add(sectionName, new Dictionary<string, string>());
         }
-        public void DeleteSetting(string sectionName, string settingName)
+
+        /// <summary>
+        /// Delete a setting in a section
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        /// <param name="settingName">Setting's name</param>
+        public virtual void DeleteSetting(string sectionName, string settingName)
         {
             if (keyPairs.ContainsKey(sectionName) && keyPairs[sectionName].ContainsKey(settingName))
                 keyPairs[sectionName].Remove(settingName);
@@ -137,16 +210,15 @@ namespace IniParserLTK
 
         #endregion
 
-        #region Others: EnumSection, GetAllSettings
-        public List<String> EnumSection(string sectionName)
+        #region Others: EnumSection
+        /// <summary>
+        /// Enumerate all the sections
+        /// </summary>
+        /// <returns>A list of section settings</returns>
+        public virtual List<String> EnumSection()
         {
             return keyPairs.Keys.ToList();
         }
-        public Dictionary<string, string> GetAllSettings(string sectionName)
-        {
-            return keyPairs[sectionName];
-        }
-
         #endregion
     }
 }
