@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IniParserLTK
 {
@@ -12,25 +11,26 @@ namespace IniParserLTK
     /// 1. Read, save from string or files. 
     /// 2. Section inheritance [A]x=y[B]Inherit=A
     /// 3. Extensible, all methods are virtual
+    /// 4. Comment out in .ini file by using #
     /// </summary>
     public class IniParser
     {
         #region Protected Properties
         protected const string INHERIT = "Inherit"; // Support section inheritance
         protected const string ROOT = "Root";       // Root section
-        protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();
-        protected string iniFilePath;
+        protected Dictionary<string, Dictionary<string, string>> keyPairs = new Dictionary<string, Dictionary<string, string>>();  // dictionary to hold all sections and settings
+        protected string iniFilePath;  // path of the ini file
         #endregion
 
         #region  Constructors, Initializers, Savers
-       
+
         /// <summary>
         /// Empty constructor
         /// </summary>
         public IniParser()
         {
         }
-        
+
         /// <summary>
         /// Construct parser from an ini file
         /// </summary>
@@ -39,13 +39,16 @@ namespace IniParserLTK
         {
             Read(iniFilePath);
         }
-        
+
         /// <summary>
-        /// Initialize from an ini string
+        /// Initialize from an ini string. 
         /// </summary>
         /// <param name="iniStr">String ini</param>
-        public virtual void Initialize(string iniStr)
+        /// <param name="clearExistingSettings">If true, all existing settings will be cleared.</param>
+        public virtual void Initialize(string iniStr, bool clearExistingSettings = true)
         {
+            if (clearExistingSettings)
+                DeleteAll();
             var lines = iniStr.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#"));
             var currentRoot = ROOT;
             string[] keyPair;
@@ -65,7 +68,7 @@ namespace IniParserLTK
                 }
             }
         }
-        
+
         /// <summary>
         /// Convert settings to string
         /// </summary>
@@ -89,16 +92,26 @@ namespace IniParserLTK
         /// Read ini settings from a file
         /// </summary>
         /// <param name="iniFilePath">Path of an ini file</param>
-        public virtual void Read(string iniFilePath)
+        /// <param name="clearExistingSettings">If true, all existing settings will be cleared. If false, all current settings will be kept and overwritten by new value if the pair (section, setting name) matches.</param>
+        public virtual void Read(string iniFilePath, bool clearExistingSettings = true)
         {
             this.iniFilePath = iniFilePath;
-            Initialize(File.ReadAllText(iniFilePath));
+            Initialize(File.ReadAllText(iniFilePath), clearExistingSettings);
+        }
+        /// <summary>
+        /// Read ini settings from a textreader or streamreader
+        /// </summary>
+        /// <param name="iniFilePath">Path of an ini file</param>
+        /// <param name="clearExistingSettings">If true, all existing settings will be cleared. If false, all current settings will be kept and overwritten by new value if the pair (section, setting name) matches.</param>  
+        public virtual void Read(TextReader reader, bool clearExistingSettings = true)
+        {
+            Initialize(reader.ReadToEnd(), clearExistingSettings);
         }
 
         /// <summary>
         /// Save to a file
         /// </summary>
-        /// <param name="iniFilePath">Path of an ini file. If not specified, the file for read will be used.</param>
+        /// <param name="iniFilePath">Path of an ini file. If not specified, the most recent file used for reading ini setting will be used.</param>
         public virtual void Save(string iniFilePath = null)
         {
             if (iniFilePath == null)
@@ -131,7 +144,7 @@ namespace IniParserLTK
             }
             return flag;
         }
-        
+
         /// <summary>
         /// Check if a section exists
         /// </summary>
@@ -141,7 +154,7 @@ namespace IniParserLTK
         {
             return keyPairs.ContainsKey(sectionName);
         }
-        
+
         /// <summary>
         /// Get a setting under a section.
         /// </summary>
@@ -199,6 +212,19 @@ namespace IniParserLTK
         }
 
         /// <summary>
+        /// Delete a section in the settings
+        /// </summary>
+        /// <param name="sectionName">Section's name</param>
+        public virtual void DeleteSection(string sectionName)
+        {
+            if (HasSection(sectionName))
+            {
+                keyPairs[sectionName].Clear();
+            }
+            keyPairs.Remove(sectionName);
+        }
+
+        /// <summary>
         /// Delete a setting in a section
         /// </summary>
         /// <param name="sectionName">Section's name</param>
@@ -209,6 +235,17 @@ namespace IniParserLTK
                 keyPairs[sectionName].Remove(settingName);
         }
 
+        /// <summary>
+        /// Delete all sections and settings
+        /// </summary>
+        public virtual void DeleteAll()
+        {
+            foreach (var key in keyPairs)
+            {
+                key.Value.Clear();
+            }
+            keyPairs.Clear();
+        }
         #endregion
 
         #region Others: EnumSection
