@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using IniParserLTK;
 
-namespace Tests
+namespace IniParserLTK.Tests
 {
     [TestClass]
     public class TestIniParser
