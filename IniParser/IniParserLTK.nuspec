@@ -2,16 +2,16 @@
 <package >
   <metadata>
     <id>IniParserLTK</id>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <title>IniParser</title>
     <authors>Le Trung Kien</authors>
     <owners>Le Trung Kien</owners>
-    <licenseUrl>http://none</licenseUrl>
-    <projectUrl>https://github.com/letrungkien211/MyUtilities/blob/master/IniParser/IniParser.cs</projectUrl>
+    <licenseUrl>http://nolicencerequired</licenseUrl>
+    <projectUrl>https://github.com/letrungkien211/IniParser.git</projectUrl>
     <iconUrl>https://nuget.org/Content/Images/packageDefaultIcon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Simple ini parser: Read/Write from/to string/file. Section inheritance. </description>
-    <releaseNotes>Add comments to method</releaseNotes>
+    <releaseNotes>Add delete methods</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <tags>Ini IniParser Parser Setting</tags>
   </metadata>
